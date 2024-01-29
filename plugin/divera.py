@@ -14,7 +14,6 @@ r"""!
 @author:      Lars Gremme
 @description: Divera247 Plugin
 """
-import json
 import logging
 from plugin.pluginBase import PluginBase
 

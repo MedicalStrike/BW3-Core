@@ -1,6 +1,8 @@
 # for pip to install all needed
 # called with 'pip install -r requirements.txt'
 pyyaml
+requests
+aiohttp
 
 # for documentation generating
 mkdocs
