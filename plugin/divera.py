@@ -73,6 +73,7 @@ class BoswatchPlugin(PluginBase):
         zvei_data = self.config.get("zvei")
         apicall = {
             "title": self.parseWildcards(zvei_data.get("title", default="{TONE}")),
+            "ric": self.parseWildcards(zvei_data.get("ric", default="{TONE}")),
             "text": self.parseWildcards(zvei_data.get("message", default="{TONE}")),
             "priority": zvei_data.get("priority", default="false"),
         }
@@ -99,7 +100,7 @@ class BoswatchPlugin(PluginBase):
 
         @param urls: array of urls"""
         url = "https://www.divera247.com"
-        request = url + apipath + "?accesskey=" + self.config.get("accesskey", default="")
+        request = url + apipath
 
         loop = asyncio.get_event_loop()
 
@@ -128,6 +129,6 @@ class BoswatchPlugin(PluginBase):
         @param session: Clientsession instance"""
         logging.debug("Post URL: [{}]".format(url))
         accesskey = "accesskey=" + self.config.get("accesskey", default="")
-        async with session.request(method="post", url=url, json=apicall, params=accesskey, ) as response:
+        async with session.request(method="post", url=url, json=apicall, params=accesskey) as response:
             logging.info("{} returned [{}]".format(response.url, response.status))
             return await response.read()
