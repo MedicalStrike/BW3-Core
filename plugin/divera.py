@@ -14,6 +14,7 @@ r"""!
 @author:      Lars Gremme
 @description: Divera247 Plugin
 """
+import json
 import logging
 from plugin.pluginBase import PluginBase
 
@@ -21,7 +22,6 @@ from plugin.pluginBase import PluginBase
 # Custom plugin includes #
 import asyncio
 from aiohttp import ClientSession
-import urllib
 # ###################### #
 
 logging.debug("- %s loaded", __name__)
@@ -39,8 +39,7 @@ class BoswatchPlugin(PluginBase):
         @param bwPacket: bwPacket instance
         Remove if not implemented"""
         fms_data = self.config.get("fms")
-        apicall = urllib.parse.urlencode({
-            "accesskey": self.config.get("accesskey", default=""),
+        apicall = json.dumps({
             "vehicle_ric": self.parseWildcards(fms_data.get("vehicle", default="")),
             "status_id": bwPacket.get("status"),
             "status_note": bwPacket.get("directionText"),
@@ -57,8 +56,7 @@ class BoswatchPlugin(PluginBase):
         @param bwPacket: bwPacket instance
         Remove if not implemented"""
         poc_data = self.config.get("pocsag")
-        apicall = urllib.parse.urlencode({
-            "accesskey": self.config.get("accesskey", default=""),
+        apicall = json.dumps({
             "title": self.parseWildcards(poc_data.get("title", default="{RIC}({SRIC})\n{MSG}")),
             "ric": self.parseWildcards(poc_data.get("ric", default="")),
             "text": self.parseWildcards(poc_data.get("message", default="{MSG}")),
@@ -73,8 +71,7 @@ class BoswatchPlugin(PluginBase):
         @param bwPacket: bwPacket instance
         Remove if not implemented"""
         zvei_data = self.config.get("zvei")
-        apicall = urllib.parse.urlencode({
-            "accesskey": self.config.get("accesskey", default=""),
+        apicall = json.dumps({
             "title": self.parseWildcards(zvei_data.get("title", default="{TONE}")),
             "ric": self.parseWildcards(zvei_data.get("ric", default="{TONE}")),
             "text": self.parseWildcards(zvei_data.get("message", default="{TONE}")),
@@ -89,8 +86,7 @@ class BoswatchPlugin(PluginBase):
         @param bwPacket: bwPacket instance
         Remove if not implemented"""
         msg_data = self.config.get("msg")
-        apicall = urllib.parse.urlencode({
-            "accesskey": self.config.get("accesskey", default=""),
+        apicall = json.dumps({
             "title": self.parseWildcards(msg_data.get("title", default="{MSG}")),
             "ric": self.parseWildcards(msg_data.get("ric", default="")),
             "text": self.parseWildcards(msg_data.get("message", default="{MSG}")),
@@ -104,34 +100,34 @@ class BoswatchPlugin(PluginBase):
 
         @param urls: array of urls"""
         url = "https://www.divera247.com"
-        request = url + apipath + "?" + apicall
+        request = url + apipath + "?" + self.config.get("accesskey", default="")
 
         loop = asyncio.get_event_loop()
 
-        future = asyncio.ensure_future(self._asyncRequests(request))
+        future = asyncio.ensure_future(self._asyncRequests(request, apicall))
         loop.run_until_complete(future)
 
-    async def _asyncRequests(self, url):
+    async def _asyncRequests(self, url, apicall):
         """Handles asynchronus requests
 
-        @param urls: array of urls to send requests to"""
+        @param url: array of urls to send requests to"""
         tasks = []
 
         async with ClientSession() as session:
             logging.debug("Generated URL: [{}]".format(url))
-            task = asyncio.ensure_future(self._fetch(url, session))
+            task = asyncio.ensure_future(self._fetch(url, apicall, session))
             tasks.append(task)
 
             responses = asyncio.gather(*tasks)
             await responses
 
-    async def _fetch(self, url, session):
+    async def _fetch(self, url, apicall, session):
         """Fetches requests
 
         @param url: url
 
         @param session: Clientsession instance"""
         logging.debug("Post URL: [{}]".format(url))
-        async with session.post(url) as response:
+        async with session.request(method="post", url=url, json=apicall) as response:
             logging.info("{} returned [{}]".format(response.url, response.status))
             return await response.read()
